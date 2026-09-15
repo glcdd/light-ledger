@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="轻记账">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect fill='%234f46e5' width='180' height='180' rx='40'/%3E%3Ctext x='90' y='116' font-size='76' text-anchor='middle'%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
+  <title>轻记账</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --danger: #ef4444;
+      --income: #16a34a;
+      --income-light: #dcfce7;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1e293b;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 16px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding-bottom: 24px;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    header {
+      text-align: center;
+      padding: 12px 0 8px;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: 1px;
+    }
+
+    header p {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* 统计卡片 */
+    .stats-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px 12px;
+      margin-bottom: 16px;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .stat-item {
+      flex: 1;
+      text-align: center;
+      padding: 0 4px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stat-value.expense {
+      color: var(--text);
+    }
+
+    .stat-value.income {
+      color: var(--income);
+    }
+
+    /* 输入区 */
+    .input-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    /* 收支切换 */
+    .type-toggle {
+      display: flex;
+      background: #f1f5f9;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 16px;
+    }
+
+    .type-option {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-secondary);
+    }
+
+    .type-option.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .type-option.income.active {
+      color: var(--income);
+    }
+
+    .amount-input-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .amount-input-wrap .currency {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 20px;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    #amountInput {
+      width: 100%;
+      height: 56px;
+      padding: 0 16px 0 44px;
+      font-size: 24px;
+      font-weight: 700;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+      color: var(--text);
+      transition: border-color 0.2s;
+    }
+
+    #amountInput:focus {
+      border-color: var(--primary);
+    }
+
+    .category-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .category-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .category-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      border-radius: 20px;
+      background: #f1f5f9;
+      border: 2px solid transparent;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .category-item.active {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .category-item.income.active {
+      background: var(--income-light);
+      border-color: var(--income);
+      color: var(--income);
+    }
+
+    #noteInput {
+      width: 100%;
+      height: 44px;
+      padding: 0 14px;
+      font-size: 15px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+
+    #noteInput:focus {
+      border-color: var(--primary);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      height: 48px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary.income {
+      background: var(--income);
+    }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: var(--text);
+    }
+
+    .btn-danger {
+      background: #fee2e2;
+      color: var(--danger);
+    }
+
+    /* 分类统计 */
+    .summary-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .category-bar-item {
+      margin-bottom: 12px;
+    }
+
+    .category-bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .category-bar-name {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text);
+    }
+
+    .category-bar-amount {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .category-bar-track {
+      height: 8px;
+      background: #f1f5f9;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .category-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    .empty-tip {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 13px;
+      padding: 16px 0;
+    }
+
+    /* 记录列表 */
+    .records-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .records-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .records-count {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .record-group {
+      margin-bottom: 16px;
+    }
+
+    .record-group-title {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      padding-left: 4px;
+    }
+
+    .record-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: #f8fafc;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .record-item:active {
+      background: #f1f5f9;
+    }
+
+    .record-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .record-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .record-detail {
+      min-width: 0;
+    }
+
+    .record-category {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .record-note {
+      font-size: 12px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .record-time {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .record-amount {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin-right: 8px;
+    }
+
+    .record-amount.income {
+      color: var(--income);
+    }
+
+    .record-delete {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: #fee2e2;
+      color: var(--danger);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* 底部工具栏 */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      padding: 0 4px;
+    }
+
+    .toolbar-btn {
+      font-size: 13px;
+      color: var(--text-secondary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+
+    .toolbar-btn:active {
+      background: #f1f5f9;
+    }
+
+    /* 提示消息 */
+    .toast {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(30, 41, 59, 0.92);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 24px;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* PWA 安装提示 */
+    .install-hint {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: var(--primary-light);
+      border: 1px solid var(--primary);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: var(--primary);
+    }
+
+    .install-hint span {
+      flex: 1;
+      line-height: 1.4;
+    }
+
+    .install-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .install-close {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0 4px;
+      flex-shrink: 0;
+    }
+
+    /* 响应式优化 */
+    @media (min-width: 480px) {
+      .container {
+        padding: 24px;
+      }
+
+      .stat-value {
+        font-size: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>轻记账</h1>
+      <p>数据仅保存在本机浏览器</p>
+    </header>
+
+    <!-- PWA 安装提示 -->
+    <div id="installHint" class="install-hint" style="display:none;">
+      <span id="installText">可添加到手机桌面，像 App 一样使用</span>
+      <button id="installBtn" class="install-btn" style="display:none;">安装</button>
+      <button id="installClose" class="install-close">×</button>
+    </div>
+
+    <!-- 统计 -->
+    <div class="stats-card">
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-label">今日支出</div>
+          <div class="stat-value expense" id="todayExpense">¥0.00</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">今日收入</div>
+          <div class="stat-value income" id="todayIncome">¥0.00</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">本月结余</div>
+          <div class="stat-value" id="monthBalance">¥0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 输入 -->
+    <div class="input-card">
+      <!-- 收支类型切换 -->
+      <div class="type-toggle" id="typeToggle">
+        <div class="type-option active" data-type="expense">支出</div>
+        <div class="type-option income" data-type="income">收入</div>
+      </div>
+
+      <div class="amount-input-wrap">
+        <span class="currency">¥</span>
+        <input type="number" id="amountInput" placeholder="0.00" step="0.01" inputmode="decimal">
+      </div>
+
+      <div class="category-label" id="categoryLabel">消费场景</div>
+      <div class="category-list" id="categoryList"></div>
+
+      <input type="text" id="noteInput" placeholder="备注（可选）" maxlength="50">
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="submitBtn">记一笔</button>
+        <button class="btn btn-secondary" id="cancelBtn" style="display:none;">取消</button>
+      </div>
+    </div>
+
+    <!-- 支出分类统计 -->
+    <div class="summary-card">
+      <div class="card-title">📊 本月分类支出</div>
+      <div id="expenseStats"></div>
+    </div>
+
+    <!-- 收入分类统计 -->
+    <div class="summary-card">
+      <div class="card-title">📈 本月分类收入</div>
+      <div id="incomeStats"></div>
+    </div>
+
+    <!-- 记录列表 -->
+    <div class="records-card">
+      <div class="records-header">
+        <div class="card-title" style="margin:0;">📝 近期记录</div>
+        <div class="records-count" id="recordsCount">共 0 笔</div>
+      </div>
+      <div id="recordsList"></div>
+    </div>
+
+    <div class="toolbar">
+      <button class="toolbar-btn" id="clearBtn">🗑️ 清空数据</button>
+      <button class="toolbar-btn" id="exportBtn">📤 导出备份</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ================= 配置 =================
+    const STORAGE_KEY = 'simple-expense-records-v2';
+
+    const CATEGORIES = [
+      // 支出
+      { id: 'breakfast', name: '早饭', icon: '🍞', color: '#f59e0b', type: 'expense' },
+      { id: 'lunch', name: '午饭', icon: '🍱', color: '#10b981', type: 'expense' },
+      { id: 'dinner', name: '晚饭', icon: '🍜', color: '#3b82f6', type: 'expense' },
+      { id: 'shopping', name: '购物', icon: '🛍️', color: '#ec4899', type: 'expense' },
+      { id: 'takeout', name: '外卖', icon: '🛵', color: '#f97316', type: 'expense' },
+      { id: 'dining_out', name: '外出聚餐', icon: '🍻', color: '#8b5cf6', type: 'expense' },
+      { id: 'other', name: '其他', icon: '📝', color: '#64748b', type: 'expense' },
+      // 收入
+      { id: 'salary', name: '工资', icon: '💰', color: '#22c55e', type: 'income' },
+      { id: 'bonus', name: '奖金', icon: '🎉', color: '#14b8a6', type: 'income' },
+      { id: 'part_time', name: '兼职', icon: '💻', color: '#06b6d4', type: 'income' },
+      { id: 'investment', name: '投资收益', icon: '📈', color: '#f59e0b', type: 'income' },
+      { id: 'gift', name: '礼金', icon: '🧧', color: '#ef4444', type: 'income' },
+      { id: 'refund', name: '退款', icon: '↩️', color: '#6366f1', type: 'income' },
+      { id: 'other_income', name: '其他', icon: '📝', color: '#64748b', type: 'income' }
+    ];
+
+    // ================= 状态 =================
+    let records = [];
+    let editingId = null;
+    let currentType = 'expense';
+    let selectedCategory = 'breakfast';
+
+    // ================= DOM 元素 =================
+    const typeToggle = document.getElementById('typeToggle');
+    const categoryLabel = document.getElementById('categoryLabel');
+    const amountInput = document.getElementById('amountInput');
+    const noteInput = document.getElementById('noteInput');
+    const categoryList = document.getElementById('categoryList');
+    const submitBtn = document.getElementById('submitBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const todayExpenseEl = document.getElementById('todayExpense');
+    const todayIncomeEl = document.getElementById('todayIncome');
+    const monthBalanceEl = document.getElementById('monthBalance');
+    const expenseStatsEl = document.getElementById('expenseStats');
+    const incomeStatsEl = document.getElementById('incomeStats');
+    const recordsListEl = document.getElementById('recordsList');
+    const recordsCountEl = document.getElementById('recordsCount');
+    const clearBtn = document.getElementById('clearBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const toastEl = document.getElementById('toast');
+
+    // ================= 初始化 =================
+    function init() {
+      loadData();
+      setupTypeToggle();
+      renderCategories();
+      renderAll();
+      amountInput.focus();
+    }
+
+    function loadData() {
+      try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        records = data ? JSON.parse(data) : [];
+      } catch (e) {
+        records = [];
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    // ================= 收支类型切换 =================
+    function setupTypeToggle() {
+      const options = typeToggle.querySelectorAll('.type-option');
+      options.forEach(opt => {
+        opt.addEventListener('click', () => {
+          currentType = opt.dataset.type;
+          options.forEach(o => o.classList.remove('active'));
+          opt.classList.add('active');
+
+          categoryLabel.textContent = currentType === 'expense' ? '消费场景' : '收入来源';
+          selectedCategory = getCategoriesByType(currentType)[0].id;
+          renderCategories();
+          updateSubmitButtonStyle();
+        });
+      });
+    }
+
+    function updateSubmitButtonStyle() {
+      if (currentType === 'income') {
+        submitBtn.classList.add('income');
+      } else {
+        submitBtn.classList.remove('income');
+      }
+    }
+
+    function getCategoriesByType(type) {
+      return CATEGORIES.filter(c => c.type === type);
+    }
+
+    // ================= 渲染分类选择 =================
+    function renderCategories() {
+      categoryList.innerHTML = '';
+      const categories = getCategoriesByType(currentType);
+      categories.forEach(cat => {
+        const item = document.createElement('div');
+        item.className = 'category-item' + (cat.id === selectedCategory ? ' active' : '') + (cat.type === 'income' ? ' income' : '');
+        item.innerHTML = `<span>${cat.icon}</span><span>${cat.name}</span>`;
+        item.addEventListener('click', () => {
+          selectedCategory = cat.id;
+          renderCategories();
+        });
+        categoryList.appendChild(item);
+      });
+    }
+
+    // ================= 格式化 =================
+    function formatMoney(num) {
+      return '¥' + Number(num).toFixed(2);
+    }
+
+    function formatDateTime(iso) {
+      const d = new Date(iso);
+      const h = String(d.getHours()).padStart(2, '0');
+      const m = String(d.getMinutes()).padStart(2, '0');
+      return `${h}:${m}`;
+    }
+
+    function isToday(iso) {
+      const d = new Date(iso);
+      const now = new Date();
+      return d.getFullYear() === now.getFullYear() &&
+             d.getMonth() === now.getMonth() &&
+             d.getDate() === now.getDate();
+    }
+
+    function isThisMonth(iso) {
+      const d = new Date(iso);
+      const now = new Date();
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    }
+
+    function formatGroupDate(iso) {
+      const d = new Date(iso);
+      const now = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const week = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()];
+
+      if (y === now.getFullYear() && m === String(now.getMonth() + 1).padStart(2, '0') && day === String(now.getDate()).padStart(2, '0')) {
+        return '今天';
+      }
+      return `${y}-${m}-${day} ${week}`;
+    }
+
+    // ================= 核心渲染 =================
+    function renderAll() {
+      renderStats();
+      renderCategoryStats('expense', expenseStatsEl);
+      renderCategoryStats('income', incomeStatsEl);
+      renderRecords();
+    }
+
+    function renderStats() {
+      const todayExpense = records.filter(r => r.type === 'expense' && isToday(r.date)).reduce((sum, r) => sum + r.amount, 0);
+      const todayIncome = records.filter(r => r.type === 'income' && isToday(r.date)).reduce((sum, r) => sum + r.amount, 0);
+      const monthExpense = records.filter(r => r.type === 'expense' && isThisMonth(r.date)).reduce((sum, r) => sum + r.amount, 0);
+      const monthIncome = records.filter(r => r.type === 'income' && isThisMonth(r.date)).reduce((sum, r) => sum + r.amount, 0);
+
+      todayExpenseEl.textContent = formatMoney(todayExpense);
+      todayIncomeEl.textContent = formatMoney(todayIncome);
+      monthBalanceEl.textContent = formatMoney(monthIncome - monthExpense);
+    }
+
+    function renderCategoryStats(type, container) {
+      const monthRecords = records.filter(r => r.type === type && isThisMonth(r.date));
+      if (monthRecords.length === 0) {
+        container.innerHTML = `<div class="empty-tip">本月还没有${type === 'expense' ? '支出' : '收入'}记录</div>`;
+        return;
+      }
+
+      const total = monthRecords.reduce((sum, r) => sum + r.amount, 0);
+      const stats = {};
+      getCategoriesByType(type).forEach(c => stats[c.id] = { ...c, amount: 0 });
+      monthRecords.forEach(r => {
+        if (stats[r.category]) stats[r.category].amount += r.amount;
+      });
+
+      const sorted = Object.values(stats).filter(s => s.amount > 0).sort((a, b) => b.amount - a.amount);
+
+      container.innerHTML = sorted.map(cat => {
+        const percent = total > 0 ? (cat.amount / total * 100).toFixed(1) : 0;
+        return `
+          <div class="category-bar-item">
+            <div class="category-bar-header">
+              <span class="category-bar-name"><span>${cat.icon}</span> ${cat.name}</span>
+              <span class="category-bar-amount">${formatMoney(cat.amount)} (${percent}%)</span>
+            </div>
+            <div class="category-bar-track">
+              <div class="category-bar-fill" style="width:${percent}%; background:${cat.color}"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderRecords() {
+      if (records.length === 0) {
+        recordsListEl.innerHTML = '<div class="empty-tip">还没有记录，记一笔吧～</div>';
+        recordsCountEl.textContent = '共 0 笔';
+        return;
+      }
+
+      const sorted = [...records].sort((a, b) => new Date(b.date) - new Date(a.date));
+      recordsCountEl.textContent = `共 ${sorted.length} 笔`;
+
+      const groups = {};
+      sorted.forEach(r => {
+        const key = formatGroupDate(r.date);
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(r);
+      });
+
+      recordsListEl.innerHTML = Object.entries(groups).map(([date, items]) => {
+        const dayIncome = items.filter(r => r.type === 'income').reduce((sum, r) => sum + r.amount, 0);
+        const dayExpense = items.filter(r => r.type === 'expense').reduce((sum, r) => sum + r.amount, 0);
+        const dayBalance = dayIncome - dayExpense;
+        return `
+          <div class="record-group">
+            <div class="record-group-title">${date} · 收${formatMoney(dayIncome).replace('¥', '')} 支${formatMoney(dayExpense).replace('¥', '')} 余${formatMoney(dayBalance).replace('¥', '')}</div>
+            ${items.map(r => renderRecordItem(r)).join('')}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderRecordItem(r) {
+      const cat = CATEGORIES.find(c => c.id === r.category) || CATEGORIES[6];
+      const isIncome = r.type === 'income';
+      const sign = isIncome ? '+' : '-';
+      return `
+        <div class="record-item" data-id="${r.id}">
+          <div class="record-info" onclick="startEdit('${r.id}')">
+            <div class="record-icon" style="background:${cat.color}20">${cat.icon}</div>
+            <div class="record-detail">
+              <div class="record-category">${cat.name}${r.note ? ' · ' + escapeHtml(r.note) : ''}</div>
+              <div class="record-time">${formatDateTime(r.date)}</div>
+            </div>
+          </div>
+          <div class="record-amount ${isIncome ? 'income' : ''}">${sign}${formatMoney(r.amount).replace('¥', '')}</div>
+          <button class="record-delete" onclick="deleteRecord('${r.id}', event)">×</button>
+        </div>
+      `;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ================= 增删改 =================
+    function getFormData() {
+      const amount = parseFloat(amountInput.value);
+      const note = noteInput.value.trim();
+      if (isNaN(amount) || amount <= 0) {
+        showToast('请输入有效金额');
+        return null;
+      }
+      return { amount, note };
+    }
+
+    function addRecord() {
+      const data = getFormData();
+      if (!data) return;
+
+      const record = {
+        id: Date.now().toString(),
+        amount: data.amount,
+        type: currentType,
+        category: selectedCategory,
+        note: data.note,
+        date: new Date().toISOString()
+      };
+
+      records.push(record);
+      saveData();
+      renderAll();
+      resetForm();
+      showToast(currentType === 'expense' ? '支出已记录' : '收入已记录');
+    }
+
+    function updateRecord() {
+      const data = getFormData();
+      if (!data) return;
+
+      const idx = records.findIndex(r => r.id === editingId);
+      if (idx === -1) return;
+
+      records[idx].amount = data.amount;
+      records[idx].category = selectedCategory;
+      records[idx].note = data.note;
+      records[idx].type = currentType;
+      records[idx].date = new Date().toISOString();
+
+      saveData();
+      renderAll();
+      resetForm();
+      showToast('已修改');
+    }
+
+    window.startEdit = function(id) {
+      const r = records.find(item => item.id === id);
+      if (!r) return;
+
+      editingId = id;
+      currentType = r.type || 'expense';
+      selectedCategory = r.category;
+      amountInput.value = r.amount.toFixed(2);
+      noteInput.value = r.note || '';
+
+      // 同步类型切换按钮状态
+      const options = typeToggle.querySelectorAll('.type-option');
+      options.forEach(o => o.classList.remove('active'));
+      typeToggle.querySelector(`[data-type="${currentType}"]`).classList.add('active');
+
+      categoryLabel.textContent = currentType === 'expense' ? '消费场景' : '收入来源';
+      renderCategories();
+      updateSubmitButtonStyle();
+      submitBtn.textContent = '保存修改';
+      cancelBtn.style.display = 'block';
+      amountInput.focus();
+    };
+
+    window.deleteRecord = function(id, event) {
+      event.stopPropagation();
+      if (!confirm('确定删除这条记录吗？')) return;
+
+      records = records.filter(r => r.id !== id);
+      saveData();
+      renderAll();
+      if (editingId === id) resetForm();
+      showToast('已删除');
+    };
+
+    function resetForm() {
+      editingId = null;
+      currentType = 'expense';
+      selectedCategory = 'breakfast';
+      amountInput.value = '';
+      noteInput.value = '';
+
+      const options = typeToggle.querySelectorAll('.type-option');
+      options.forEach(o => o.classList.remove('active'));
+      typeToggle.querySelector('[data-type="expense"]').classList.add('active');
+
+      categoryLabel.textContent = '消费场景';
+      renderCategories();
+      updateSubmitButtonStyle();
+      submitBtn.textContent = '记一笔';
+      cancelBtn.style.display = 'none';
+      amountInput.focus();
+    }
+
+    // ================= 工具栏 =================
+    clearBtn.addEventListener('click', () => {
+      if (!confirm('确定清空所有数据吗？此操作不可恢复。')) return;
+      records = [];
+      saveData();
+      renderAll();
+      resetForm();
+      showToast('数据已清空');
+    });
+
+    exportBtn.addEventListener('click', () => {
+      if (records.length === 0) {
+        showToast('没有数据可导出');
+        return;
+      }
+      const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `记账备份_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('备份已下载');
+    });
+
+    // ================= 事件绑定 =================
+    submitBtn.addEventListener('click', () => {
+      if (editingId) updateRecord();
+      else addRecord();
+    });
+
+    cancelBtn.addEventListener('click', resetForm);
+
+    amountInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        if (editingId) updateRecord();
+        else addRecord();
+      }
+    });
+
+    // ================= 提示 =================
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      setTimeout(() => toastEl.classList.remove('show'), 2000);
+    }
+
+    // ================= PWA 支持 =================
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('Service Worker 注册成功'))
+        .catch(() => console.log('Service Worker 注册失败'));
+    }
+
+    let deferredPrompt = null;
+    const installHint = document.getElementById('installHint');
+    const installBtn = document.getElementById('installBtn');
+    const installText = document.getElementById('installText');
+    const installClose = document.getElementById('installClose');
+
+    function isIos() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window.MSStream);
+    }
+
+    function isStandalone() {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    function showInstallHint() {
+      if (isStandalone() || localStorage.getItem('install-hint-closed') === '1') return;
+
+      installHint.style.display = 'flex';
+
+      if (isIos()) {
+        installText.textContent = 'iPhone：点击分享按钮，选择「添加到主屏幕」';
+        installBtn.style.display = 'none';
+      } else if (deferredPrompt) {
+        installText.textContent = '可添加到手机桌面，像 App 一样使用';
+        installBtn.style.display = 'inline-block';
+      } else {
+        installText.textContent = '可添加到手机桌面，像 App 一样使用';
+        installBtn.style.display = 'none';
+      }
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      showInstallHint();
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        installHint.style.display = 'none';
+      }
+      deferredPrompt = null;
+    });
+
+    installClose.addEventListener('click', () => {
+      installHint.style.display = 'none';
+      localStorage.setItem('install-hint-closed', '1');
+    });
+
+    // 非 iOS 且没有 beforeinstallprompt 时也延迟显示一次提示
+    setTimeout(() => {
+      if (!isStandalone() && localStorage.getItem('install-hint-closed') !== '1') {
+        showInstallHint();
+      }
+    }, 2000);
+
+    // ================= 启动 =================
+    init();
+  </script>
+</body>
+</html>
