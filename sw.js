@@ -1,7 +1,10 @@
-const CACHE_NAME = 'light-ledger-v1';
+const CACHE_NAME = 'light-ledger-v2';
 const ASSETS = [
-  '/',
-  '/index.html'
+  './',
+  './index.html',
+  './manifest.json',
+  './icon192.png',
+  './icon512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -14,7 +17,13 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      );
+    }).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', (event) => {
