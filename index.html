@@ -106,6 +106,80 @@
       color: var(--income);
     }
 
+    .stat-value.positive {
+      color: #16a34a;
+    }
+
+    .stat-value.negative {
+      color: #dc2626;
+    }
+
+    /* 预算提示卡片 */
+    .budget-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .budget-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .budget-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .budget-amount {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .budget-amount.positive {
+      color: #16a34a;
+    }
+
+    .budget-amount.negative {
+      color: #dc2626;
+    }
+
+    .budget-progress {
+      margin-bottom: 8px;
+    }
+
+    .budget-progress-track {
+      height: 8px;
+      background: #f1f5f9;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+
+    .budget-progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--primary);
+      transition: width 0.4s ease;
+    }
+
+    .budget-progress-fill.warning {
+      background: #f59e0b;
+    }
+
+    .budget-progress-fill.danger {
+      background: #dc2626;
+    }
+
+    .budget-detail {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
     /* 输入区 */
     .input-card {
       background: var(--card);
@@ -455,6 +529,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
       margin-top: 20px;
       padding: 0 4px;
     }
@@ -493,6 +569,43 @@
     .toast.show {
       opacity: 1;
       transform: translateX(-50%) translateY(0);
+    }
+
+    /* 弹窗 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 200;
+    }
+
+    .modal-content {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+
+    .modal-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .modal-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      line-height: 1.5;
     }
 
     /* PWA 安装提示 */
@@ -581,6 +694,20 @@
       </div>
     </div>
 
+    <!-- 本月预算提示 -->
+    <div class="budget-card" id="budgetCard">
+      <div class="budget-header">
+        <span class="budget-label" id="budgetLabel">本月还可花费</span>
+        <span class="budget-amount" id="budgetAmount">¥0.00</span>
+      </div>
+      <div class="budget-progress">
+        <div class="budget-progress-track">
+          <div class="budget-progress-fill" id="budgetProgressFill" style="width:0%"></div>
+        </div>
+        <div class="budget-detail" id="budgetDetail">设置目标剩余后，可查看本月还能花多少</div>
+      </div>
+    </div>
+
     <!-- 输入 -->
     <div class="input-card">
       <!-- 收支类型切换 -->
@@ -628,7 +755,25 @@
 
     <div class="toolbar">
       <button class="toolbar-btn" id="clearBtn">🗑️ 清空数据</button>
+      <button class="toolbar-btn" id="targetBtn">🎯 设置目标</button>
       <button class="toolbar-btn" id="exportBtn">📤 导出备份</button>
+    </div>
+  </div>
+
+  <!-- 目标设置弹窗 -->
+  <div class="modal-overlay" id="targetModal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-title">设置本月目标剩余</div>
+      <p class="modal-desc">设置后，系统会根据本月支出自动计算「还能花多少」。</p>
+      <div class="amount-input-wrap" style="margin-bottom:12px;">
+        <span class="currency">¥</span>
+        <input type="number" id="targetInput" placeholder="例如：8000" step="0.01" inputmode="decimal">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="targetCancelBtn">取消</button>
+        <button class="btn btn-danger" id="targetClearBtn">清空</button>
+        <button class="btn btn-primary" id="targetSaveBtn">保存</button>
+      </div>
     </div>
   </div>
 
@@ -637,6 +782,7 @@
   <script>
     // ================= 配置 =================
     const STORAGE_KEY = 'simple-expense-records-v2';
+    const TARGET_KEY = 'light-ledger-target-remaining';
 
     const CATEGORIES = [
       // 支出
@@ -662,6 +808,7 @@
     let editingId = null;
     let currentType = 'expense';
     let selectedCategory = 'breakfast';
+    let targetRemaining = null;
 
     // ================= DOM 元素 =================
     const typeToggle = document.getElementById('typeToggle');
@@ -680,12 +827,28 @@
     const recordsCountEl = document.getElementById('recordsCount');
     const clearBtn = document.getElementById('clearBtn');
     const exportBtn = document.getElementById('exportBtn');
+    const targetBtn = document.getElementById('targetBtn');
     const toastEl = document.getElementById('toast');
+
+    // 预算提示元素
+    const budgetLabel = document.getElementById('budgetLabel');
+    const budgetAmount = document.getElementById('budgetAmount');
+    const budgetProgressFill = document.getElementById('budgetProgressFill');
+    const budgetDetail = document.getElementById('budgetDetail');
+
+    // 目标弹窗元素
+    const targetModal = document.getElementById('targetModal');
+    const targetInput = document.getElementById('targetInput');
+    const targetSaveBtn = document.getElementById('targetSaveBtn');
+    const targetCancelBtn = document.getElementById('targetCancelBtn');
+    const targetClearBtn = document.getElementById('targetClearBtn');
 
     // ================= 初始化 =================
     function init() {
       loadData();
+      loadTarget();
       setupTypeToggle();
+      setupTargetModal();
       renderCategories();
       renderAll();
       amountInput.focus();
@@ -702,6 +865,25 @@
 
     function saveData() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    function loadTarget() {
+      try {
+        const value = localStorage.getItem(TARGET_KEY);
+        targetRemaining = value ? parseFloat(value) : null;
+        if (isNaN(targetRemaining)) targetRemaining = null;
+      } catch (e) {
+        targetRemaining = null;
+      }
+    }
+
+    function saveTarget(value) {
+      targetRemaining = value;
+      if (value === null || value === undefined || isNaN(value)) {
+        localStorage.removeItem(TARGET_KEY);
+      } else {
+        localStorage.setItem(TARGET_KEY, value.toString());
+      }
     }
 
     // ================= 收支类型切换 =================
@@ -751,7 +933,9 @@
 
     // ================= 格式化 =================
     function formatMoney(num) {
-      return '¥' + Number(num).toFixed(2);
+      const parts = Number(num).toFixed(2).split('.');
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      return '¥' + parts.join('.');
     }
 
     function formatDateTime(iso) {
@@ -792,6 +976,7 @@
     // ================= 核心渲染 =================
     function renderAll() {
       renderStats();
+      renderBudgetTip();
       renderCategoryStats('expense', expenseStatsEl);
       renderCategoryStats('income', incomeStatsEl);
       renderRecords();
@@ -802,10 +987,51 @@
       const todayIncome = records.filter(r => r.type === 'income' && isToday(r.date)).reduce((sum, r) => sum + r.amount, 0);
       const monthExpense = records.filter(r => r.type === 'expense' && isThisMonth(r.date)).reduce((sum, r) => sum + r.amount, 0);
       const monthIncome = records.filter(r => r.type === 'income' && isThisMonth(r.date)).reduce((sum, r) => sum + r.amount, 0);
+      const monthBalance = monthIncome - monthExpense;
 
       todayExpenseEl.textContent = formatMoney(todayExpense);
       todayIncomeEl.textContent = formatMoney(todayIncome);
-      monthBalanceEl.textContent = formatMoney(monthIncome - monthExpense);
+      monthBalanceEl.textContent = formatMoney(monthBalance);
+      monthBalanceEl.className = 'stat-value' + (monthBalance > 0 ? ' positive' : monthBalance < 0 ? ' negative' : '');
+    }
+
+    function renderBudgetTip() {
+      const monthExpense = records.filter(r => r.type === 'expense' && isThisMonth(r.date)).reduce((sum, r) => sum + r.amount, 0);
+      const monthIncome = records.filter(r => r.type === 'income' && isThisMonth(r.date)).reduce((sum, r) => sum + r.amount, 0);
+      const monthBalance = monthIncome - monthExpense;
+
+      const hasTarget = targetRemaining !== null && !isNaN(targetRemaining);
+      const base = hasTarget ? targetRemaining : monthBalance;
+      const available = base - monthExpense;
+
+      budgetAmount.textContent = formatMoney(available);
+      budgetAmount.className = 'budget-amount' + (available > 0 ? ' positive' : available < 0 ? ' negative' : '');
+
+      if (!hasTarget) {
+        budgetLabel.textContent = '本月还可花费（按结余）';
+        budgetDetail.textContent = `本月已支出 ${formatMoney(monthExpense)}，当前结余 ${formatMoney(monthBalance)}`;
+        budgetProgressFill.className = 'budget-progress-fill';
+        budgetProgressFill.style.width = '0%';
+        return;
+      }
+
+      budgetLabel.textContent = '本月还可花费';
+
+      if (available >= 0) {
+        budgetDetail.textContent = `本月已支出 ${formatMoney(monthExpense)}，目标剩余 ${formatMoney(targetRemaining)}`;
+      } else {
+        budgetDetail.textContent = `⚠️ 本月已超支 ${formatMoney(Math.abs(available))}`;
+      }
+
+      const percent = targetRemaining > 0 ? Math.min(100, (monthExpense / (targetRemaining + monthExpense)) * 100) : 0;
+      budgetProgressFill.style.width = percent + '%';
+
+      budgetProgressFill.className = 'budget-progress-fill';
+      if (percent >= 100) {
+        budgetProgressFill.classList.add('danger');
+      } else if (percent >= 80) {
+        budgetProgressFill.classList.add('warning');
+      }
     }
 
     function renderCategoryStats(type, container) {
@@ -923,7 +1149,17 @@
       saveData();
       renderAll();
       resetForm();
-      showToast(currentType === 'expense' ? '支出已记录' : '收入已记录');
+
+      if (record.type === 'income' && record.category === 'salary') {
+        const monthExpense = records.filter(r => r.type === 'expense' && isThisMonth(r.date)).reduce((sum, r) => sum + r.amount, 0);
+        const monthIncome = records.filter(r => r.type === 'income' && isThisMonth(r.date)).reduce((sum, r) => sum + r.amount, 0);
+        const monthBalance = monthIncome - monthExpense;
+        const base = (targetRemaining !== null && !isNaN(targetRemaining)) ? targetRemaining : monthBalance;
+        const available = base - monthExpense;
+        showToast(`工资已记录，本月还可花费 ${formatMoney(available)}`);
+      } else {
+        showToast(currentType === 'expense' ? '支出已记录' : '收入已记录');
+      }
     }
 
     function updateRecord() {
@@ -996,6 +1232,49 @@
       submitBtn.textContent = '记一笔';
       cancelBtn.style.display = 'none';
       amountInput.focus();
+    }
+
+    // ================= 目标设置弹窗 =================
+    function setupTargetModal() {
+      targetBtn.addEventListener('click', () => {
+        targetInput.value = targetRemaining !== null ? targetRemaining.toFixed(2) : '';
+        targetModal.style.display = 'flex';
+        targetInput.focus();
+      });
+
+      targetCancelBtn.addEventListener('click', closeTargetModal);
+
+      targetClearBtn.addEventListener('click', () => {
+        saveTarget(null);
+        renderBudgetTip();
+        closeTargetModal();
+        showToast('目标已清空');
+      });
+
+      targetSaveBtn.addEventListener('click', () => {
+        const value = parseFloat(targetInput.value);
+        if (isNaN(value) || value < 0) {
+          showToast('请输入有效金额');
+          return;
+        }
+        saveTarget(value);
+        renderBudgetTip();
+        closeTargetModal();
+        showToast('目标已保存');
+      });
+
+      targetInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') targetSaveBtn.click();
+      });
+
+      targetModal.addEventListener('click', (e) => {
+        if (e.target === targetModal) closeTargetModal();
+      });
+    }
+
+    function closeTargetModal() {
+      targetModal.style.display = 'none';
+      targetInput.value = '';
     }
 
     // ================= 工具栏 =================
