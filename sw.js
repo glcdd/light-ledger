@@ -1,4 +1,4 @@
-const CACHE_NAME = 'light-ledger-v5';
+const CACHE_NAME = 'light-ledger-v6';
 const ASSETS = [
   './',
   './index.html',
