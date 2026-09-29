@@ -1138,16 +1138,36 @@
       showToast('数据已清空');
     });
 
-    exportBtn.addEventListener('click', () => {
+    exportBtn.addEventListener('click', async () => {
       if (records.length === 0) {
         showToast('没有数据可导出');
         return;
       }
+
+      const fileName = `记账备份_${new Date().toISOString().slice(0,10)}.json`;
       const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
+      const file = new File([blob], fileName, { type: 'application/json' });
+
+      // 优先使用系统分享面板（移动端更友好）
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: '轻记账备份',
+            text: '轻记账数据备份',
+            files: [file]
+          });
+          showToast('分享成功');
+          return;
+        } catch (e) {
+          // 用户取消分享或失败，回退到下载
+        }
+      }
+
+      // 回退：浏览器下载
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `记账备份_${new Date().toISOString().slice(0,10)}.json`;
+      a.download = fileName;
       a.click();
       URL.revokeObjectURL(url);
       showToast('备份已下载');
